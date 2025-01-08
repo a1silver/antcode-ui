@@ -1,0 +1,17 @@
+# Ignore __pycache__ folders
+__pycache__/
+.idea/
+.venv/
+
+# Other typical Python ignores
+*.pyc
+*.pyo
+*.pyd
+
+.prettierrc
+.python-version
+
+# AntCode various files
+/*.txt
+/*.json
+/*.py
