@@ -36,6 +36,8 @@ class AntSettings:
         "stopOnLastStep": [True, "bool"],
         "fancyGraphics": [False, "bool"],
         "showTopBar": [True, "bool"],
+        "hoverOverlay": [True, "bool"],
+        "tooltips": [2, "int", (0, 2)],
     }
     SETTINGS_DESCRIPTIONS = {
         "pauseOnStep": "Pause the simulation instantly if the user manually steps forward or backward.",
@@ -44,7 +46,9 @@ class AntSettings:
         "autoSave": "Auto-save the simulation configuration when modifying settings.",
         "stopOnLastStep": "Instantly pause the simulation when the last step is reached.",
         "fancyGraphics": "Whether plain colors or detailed graphics are used to render certain cells.",
-        "showTopBar": "Show or hide the panel containing key game details such as step number and team scores."
+        "showTopBar": "Show or hide the panel containing key game details such as step number and team scores.",
+        "hoverOverlay": "Show or hide the slightly transparent overlay for hovered cells.",
+        "tooltips": "Control the display of cell tooltips.\n0. Tooltips off\n1. Tooltips visible by pressing SHIFT\n2. Tooltips on"
     }
 
     def __init__(self, json_file: str) -> None:
@@ -56,6 +60,7 @@ class AntSettings:
         """
         self.json_file = json_file
         self.data: Dict[str, Any] = {}
+        self.contraints: Dict[str, Any] = {}
         self.type_hints: Dict[str, str] = {}
         self.descriptions: Dict[str, str] = {}
 
@@ -95,6 +100,13 @@ class AntSettings:
                 raise TypeError(
                     f"Expected value of type '{expected_type}' for key '{key}', got '{type(value).__name__}' instead."
                 )
+            if key in self.contraints:
+                if expected_type == "int":
+                    lowerBound, upperBound = self.contraints[key]
+                    if value < lowerBound or value > upperBound:
+                        raise TypeError(
+                            f"Expected integer value >={lowerBound} or <={upperBound} for key '{key}', got {value} instead."
+                        )
 
         self.data[key] = value
 
@@ -143,7 +155,7 @@ class AntSettings:
             IOError: If there is an issue writing to the file.
         """
         combined_data = {
-            key: [self.data[key], self.type_hints[key]] for key in self.data
+            key: self.data[key] for key in self.data
         }
         with open(self.json_file, "w") as file:
             json.dump(combined_data, file, indent=4)
@@ -160,20 +172,22 @@ class AntSettings:
                 combined_data = json.load(file)
                 self.data = {}
                 self.type_hints = {}
-
-                for key, (value, expected_type) in self.DEFAULT_SETTINGS.items():
+                
+                for key, (value, expected_type, *optional_constraints) in self.DEFAULT_SETTINGS.items():
+                    constraints = optional_constraints[0] if optional_constraints else None
                     if key in combined_data:
-                        current_value = combined_data[key][0]
-                        current_type = combined_data[key][1]
-                        if self._validate_type(current_value, current_type):
+                        current_value = combined_data[key]
+                        if self._validate_type(current_value, expected_type):
                             self.data[key] = current_value
-                            self.type_hints[key] = current_type
+                            self.type_hints[key] = expected_type
                         else:
                             self.data[key] = value
                             self.type_hints[key] = expected_type
                     else:
                         self.data[key] = value
                         self.type_hints[key] = expected_type
+                    if constraints:
+                        self.contraints[key] = constraints
 
                 self.save()
 
@@ -207,6 +221,20 @@ class AntSettings:
         if key in self.type_hints and self.type_hints[key] in type_map:
             return type_map[self.type_hints[key]]
         return "none"
+    
+    def get_key_description(self, key: str) -> str:
+        """
+        Get the text description for a given config key
+        
+        Args:
+            key (str): The key to get a description for
+            
+        Returns:
+            str: The resulting description
+        """
+        if key in AntSettings.SETTINGS_DESCRIPTIONS:
+            return AntSettings.SETTINGS_DESCRIPTIONS[key]
+        return "N/A"
 
     @staticmethod
     def _validate_type(value: Any, expected_type: str) -> bool:

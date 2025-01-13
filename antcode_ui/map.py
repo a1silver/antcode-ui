@@ -46,6 +46,12 @@ class MapComponent(Component):
         self.font32 = pygame.font.SysFont(None, 32)
         self.simulation = simulation
         
+    def is_ant_alive(self, ant: str) -> bool:
+        return any(ant.lower() in item.lower() for item in self.map_data)
+    
+    def is_ant_holding_food(self, ant: str) -> bool:
+        return self.is_ant_alive(ant) and any(ant.lower() in item for item in self.map_data)
+        
     def draw_string(self, text: str, x: int, y: int, center: bool, font: pygame.font.Font, screen: Union[pygame.Surface, pygame.SurfaceType]):
         text_surface = font.render(text, True, WHITE)
         text_rect = None
@@ -75,10 +81,10 @@ class MapComponent(Component):
         northScoreWidth, northScoreHeight = self.font24.size(northScore)
         self.draw_string(northScore, self.x + self.simulation.settings["cellSize"] + 7, self.y + self.simulation.settings["cellSize"] // 2 - northScoreHeight // 2, False, self.font24, screen)
         for ant, idx in zip(['A', 'B', 'C', 'D'], range(0, 4)):
-            if any(ant.lower() in item.lower() for item in self.map_data):
+            if self.is_ant_alive(ant):
                 image_path = os.path.join(
                     "./antcode_ui/images",
-                    f"ant-{ant.lower()}.png",
+                    f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) else ''}.png",
                 )
                 if os.path.exists(image_path):
                     image = pygame.image.load(image_path)
@@ -87,6 +93,7 @@ class MapComponent(Component):
                         (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
                     )
                     screen.blit(image, (self.x + (idx + 1) * self.simulation.settings["cellSize"] + 15 + northScoreWidth, self.y - 2))
+                    self.draw_string(ant, self.x + (idx + 2) * self.simulation.settings["cellSize"] + 5 + northScoreWidth, self.y + self.simulation.settings["cellSize"] - 12, True, self.font24, screen)
                     
     def render_top_bar_south_team(self, screen: Union[pygame.Surface, pygame.SurfaceType]):
         # Define top bar region for south team
@@ -112,11 +119,11 @@ class MapComponent(Component):
         southScore = f"Score: {self.simulation.maps[self.simulation.current_map_index].south_points}"
         southScoreWidth, southScoreHeight = self.font24.size(southScore)
         self.draw_string(southScore, self.x + self.width - (self.simulation.settings["cellSize"] + 7) - southScoreWidth, self.y + self.simulation.settings["cellSize"] // 2 - southScoreHeight // 2, False, self.font24, screen)
-        for ant, idx in zip(['E', 'F', 'G', 'H'], range(0, 4)):
-            if any(ant.lower() in item.lower() for item in self.map_data):
+        for ant, idx in zip(reversed(['E', 'F', 'G', 'H']), range(0, 4)):
+            if self.is_ant_alive(ant):
                 image_path = os.path.join(
                     "./antcode_ui/images",
-                    f"ant-{ant.lower()}.png",
+                    f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) else ''}.png",
                 )
                 if os.path.exists(image_path):
                     image = pygame.image.load(image_path)
@@ -125,33 +132,33 @@ class MapComponent(Component):
                         (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
                     )
                     screen.blit(image, (self.x + self.width - ((idx + 2) * self.simulation.settings["cellSize"] + 7) - southScoreWidth, self.y - 2))
+                    self.draw_string(ant, self.x + self.width - ((idx + 1) * self.simulation.settings["cellSize"] + 17) - southScoreWidth, self.y + self.simulation.settings["cellSize"] - 12, True, self.font24, screen)
 
     def draw(self, screen: Union[pygame.Surface, pygame.SurfaceType]):
         """
-        Draws the map on the given screen surface.
-
-        This method iterates through each cell of the map (represented by characters in `map_data`)
-        and draws the appropriate visual representation. Depending on the character in the cell, it can
-        render a color, a digit, or an image. A border is drawn around each cell, and text is rendered
-        for numeric characters.
+        Draws the map on the given screen surface with interactive hover effects and tooltips.
 
         Args:
             screen (Union[pygame.Surface, pygame.SurfaceType]): The pygame surface to which the map will be drawn.
         """
         cell_offset = 1 if self.map_data is not BLANK_MAP and self.simulation.settings["showTopBar"] else 0
-        
-        # Render text stuff
+
+        # Render top bar
         if self.map_data is not BLANK_MAP and self.simulation.settings["showTopBar"]:
             try:
                 self.render_top_bar_north_team(screen)
                 self.render_top_bar_south_team(screen)
-                            
+
                 stepCounter = f"Step {self.simulation.current_map_index + 1} / {len(self.simulation.maps)}"
                 self.draw_string(stepCounter, self.x + self.width // 2, self.y + self.simulation.settings["cellSize"] // 2, True, self.font32, screen)
-                
+
             except TypeError:
                 pass
-        
+
+        # Get mouse position
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        hovered_cell = None
+
         # Render cells
         for row_idx, row in enumerate(self.map_data):
             for col_idx, char in enumerate(row):
@@ -161,7 +168,11 @@ class MapComponent(Component):
                     self.simulation.settings["cellSize"],
                     self.simulation.settings["cellSize"],
                 )
-                
+
+                # Check if the cell is hovered
+                if cell_rect.collidepoint(mouse_x, mouse_y):
+                    hovered_cell = (cell_rect, char, row_idx, col_idx)
+
                 # Fancy Graphics
                 if self.simulation.settings["fancyGraphics"]:
                     # Grass
@@ -201,29 +212,19 @@ class MapComponent(Component):
                     pygame.draw.rect(screen, COLORS.get(char, WHITE), cell_rect)
 
                 if char.isdigit():
-                    image_path = os.path.join(
-                        "./antcode_ui/images",
-                        "food.png",
-                    )
+                    image_path = os.path.join("./antcode_ui/images", "food.png")
                     if os.path.exists(image_path):
                         image = pygame.image.load(image_path).convert_alpha()
-                        image = pygame.transform.scale(
-                            image,
-                            (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
-                        )
+                        image = pygame.transform.scale(image, (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]))
                         screen.blit(image, cell_rect.topleft)
-                    
                 elif char == "@" or char == "X":
                     image_path = os.path.join(
                         "./antcode_ui/images",
-                        f"{'north' if char == '@' else 'south' if char == 'X' else 'error'}.png",
+                        f"{'north' if char == '@' else 'south'}.png",
                     )
                     if os.path.exists(image_path):
                         image = pygame.image.load(image_path)
-                        image = pygame.transform.scale(
-                            image,
-                            (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
-                        )
+                        image = pygame.transform.scale(image, (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]))
                         screen.blit(image, cell_rect.topleft)
                 else:
                     if char.isalpha() and char.upper() in "ABCDEFGH":
@@ -233,11 +234,63 @@ class MapComponent(Component):
                         )
                         if os.path.exists(image_path):
                             image = pygame.image.load(image_path)
-                            image = pygame.transform.scale(
-                                image,
-                                (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
-                            )
+                            image = pygame.transform.scale(image, (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]))
                             screen.blit(image, cell_rect.topleft)
 
                 if char != '#':
                     pygame.draw.rect(screen, (100, 100, 100), cell_rect, 1)
+
+        # Render hovered cell overlay and tooltip
+        keys = pygame.key.get_pressed()
+        if hovered_cell and pygame.mouse.get_focused():
+            cell_rect, char, cell_x, cell_y = hovered_cell
+            
+            if self.simulation.settings["hoverOverlay"]:
+                # Draw semi-transparent overlay
+                overlay = pygame.Surface((cell_rect.width, cell_rect.height), pygame.SRCALPHA)
+                overlay.fill((255, 255, 255, 128))  # White with 50% opacity
+                screen.blit(overlay, cell_rect.topleft)
+
+            if (self.simulation.settings["tooltips"] == 1 and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT])) or self.simulation.settings["tooltips"] == 2:
+                # Tooltip position adjustment
+                tooltip_text = [f"Cell ({cell_x}, {cell_y})"]
+                if char == '#':
+                    tooltip_text.append("Wall")
+                elif char.isdigit():
+                    tooltip_text.append(f"Food pile ({char})")
+                elif char == '@':
+                    tooltip_text.append("North Ant Hill")
+                elif char == 'X':
+                    tooltip_text.append("South Ant Hill")
+                elif char.isalpha() and char.upper() in "ABCDEFGH":
+                    team = "North Team" if char.upper() in "ABCD" else "South Team"
+                    tooltip_text.append(f"Ant {char.upper()}, {team}")
+                    if char in "abcdefgh":
+                        tooltip_text.append("Holding food")
+
+                tooltip_font = pygame.font.Font(None, 24)
+
+                # Render each line of the tooltip
+                rendered_lines = [tooltip_font.render(line, True, (255, 255, 255)) for line in tooltip_text]
+                line_heights = [line.get_height() for line in rendered_lines]
+                tooltip_width = max(line.get_width() for line in rendered_lines)
+                tooltip_height = sum(line_heights) + (len(line_heights) - 1) * 4  # Add spacing between lines
+
+                tooltip_x = mouse_x + 25
+                tooltip_y = mouse_y + 25
+
+                if tooltip_x + tooltip_width > screen.get_width():
+                    tooltip_x = mouse_x - tooltip_width - 10
+                if tooltip_y + tooltip_height > screen.get_height():
+                    tooltip_y = mouse_y - tooltip_height - 10
+
+                # Draw tooltip background
+                tooltip_bg = pygame.Surface((tooltip_width + 4, tooltip_height + 4))
+                tooltip_bg.fill((0, 0, 0))  # Black background
+                screen.blit(tooltip_bg, (tooltip_x - 2, tooltip_y - 2))
+
+                # Draw each line of the tooltip
+                current_y = tooltip_y
+                for line_surface in rendered_lines:
+                    screen.blit(line_surface, (tooltip_x, current_y))
+                    current_y += line_surface.get_height() + 4

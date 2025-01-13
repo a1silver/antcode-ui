@@ -349,7 +349,7 @@ class ConfigCommand(Command):
                 return False
 
             new_value = input(
-                f"Enter a new {self.command_manager.simulation.settings.get_key_type(matched_key)} value for '{matched_key}' (leave blank to cancel): "
+                f"***\n{matched_key}: {self.command_manager.simulation.settings.get_key_description(matched_key)}\n***\nEnter a new {self.command_manager.simulation.settings.get_key_type(matched_key)} value for '{matched_key}' (leave blank to cancel): "
             )
 
             if new_value == "":
