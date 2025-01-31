@@ -48,7 +48,7 @@ class AntSettings:
         "fancyGraphics": "Whether plain colors or detailed graphics are used to render certain cells.",
         "showTopBar": "Show or hide the panel containing key game details such as step number and team scores.",
         "hoverOverlay": "Show or hide the slightly transparent overlay for hovered cells.",
-        "tooltips": "Control the display of cell tooltips.\n0. Tooltips off\n1. Tooltips visible by pressing SHIFT\n2. Tooltips on"
+        "tooltips": "Control the display of cell tooltips.\n  0. Tooltips off\n  1. Tooltips visible by pressing SHIFT\n  2. Tooltips on",
     }
 
     def __init__(self, json_file: str) -> None:
@@ -154,9 +154,7 @@ class AntSettings:
         Raises:
             IOError: If there is an issue writing to the file.
         """
-        combined_data = {
-            key: self.data[key] for key in self.data
-        }
+        combined_data = {key: self.data[key] for key in self.data}
         with open(self.json_file, "w") as file:
             json.dump(combined_data, file, indent=4)
 
@@ -172,9 +170,15 @@ class AntSettings:
                 combined_data = json.load(file)
                 self.data = {}
                 self.type_hints = {}
-                
-                for key, (value, expected_type, *optional_constraints) in self.DEFAULT_SETTINGS.items():
-                    constraints = optional_constraints[0] if optional_constraints else None
+
+                for key, (
+                    value,
+                    expected_type,
+                    *optional_constraints,
+                ) in self.DEFAULT_SETTINGS.items():
+                    constraints = (
+                        optional_constraints[0] if optional_constraints else None
+                    )
                     if key in combined_data:
                         current_value = combined_data[key]
                         if self._validate_type(current_value, expected_type):
@@ -201,7 +205,7 @@ class AntSettings:
         self.descriptions = {
             key: value for key, value in self.SETTINGS_DESCRIPTIONS.items()
         }
-        
+
     def get_key_type(self, key: str) -> str:
         """
         Get the proper type name for a given config key
@@ -221,14 +225,14 @@ class AntSettings:
         if key in self.type_hints and self.type_hints[key] in type_map:
             return type_map[self.type_hints[key]]
         return "none"
-    
+
     def get_key_description(self, key: str) -> str:
         """
         Get the text description for a given config key
-        
+
         Args:
             key (str): The key to get a description for
-            
+
         Returns:
             str: The resulting description
         """

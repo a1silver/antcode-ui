@@ -9,10 +9,19 @@ from typing import Optional, Tuple
 # Third-Party Imports
 import pygame
 from PyQt5.QtWidgets import QApplication, QFileDialog
+from colorama import Fore, Back, Style
 
 # Local Imports
 from . import BLACK, VALID_MAP_CHARS, BLANK_MAP
-from .base import Command, CommandManager, HelpCommand, ConfigCommand, Component, Message, Round
+from .base import (
+    Command,
+    CommandManager,
+    HelpCommand,
+    ConfigCommand,
+    Component,
+    Message,
+    Round,
+)
 from .map import MapComponent
 from .settings import AntSettings
 
@@ -75,20 +84,25 @@ class AntSimulation:
             Saves settings and exits the simulation.
         run() -> None:
             Runs the main simulation loop, handling events, commands, and rendering.
-        get_sorted_key_matches(settings: AntSettings, key_name: str) -> list[tuple[str, float]]:
-            Retrieves a sorted list of setting keys based on similarity to a given key name.
-        update_config() -> None:
-            Prompts the user to update a configuration key with a new value.
         get_console_input() -> None:
             Runs a loop to accept console commands and enqueue them for processing.
     """
 
     def reset_screen(self) -> None:
         """
-        Adjust the screen size based on the dimensions of the current map.
+        Adjust the screen size based on the current map dimensions.
+        Updates the map component size and resizes the Pygame window accordingly.
         """
         screen_width = len(self.map_component.map_data[0]) * self.settings["cellSize"]
-        screen_height = (len(self.map_component.map_data) + (1 if self.map_component.map_data is not BLANK_MAP and self.settings["showTopBar"] else 0)) * self.settings["cellSize"]
+        screen_height = (
+            len(self.map_component.map_data)
+            + (
+                1
+                if self.map_component.map_data is not BLANK_MAP
+                and self.settings["showTopBar"]
+                else 0
+            )
+        ) * self.settings["cellSize"]
         self.map_component.width = screen_width
         self.map_component.height = screen_height
         self.screen = pygame.display.set_mode((screen_width, screen_height))
@@ -104,9 +118,13 @@ class AntSimulation:
 
     def load_maps(self) -> None:
         """
-        Load map data from a file, parsing board dimensions, rounds, and team points.
-        If loading fails, revert to a blank map.
+        Load and parse map data from a file.
+
+        Opens a file dialog for the user to select a map file, extracts
+        board size, rounds, and winner details, and updates the simulation state.
+        If loading fails, it falls back to a blank map.
         """
+        # Open file dialog to select a map file
         app = QApplication([])
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
@@ -114,6 +132,7 @@ class AntSimulation:
             None, "Open File", "", "All Files (*);;Text Files (*.txt)", options=options
         )
 
+        # If no file is selected or the file doesn't exist, reset to blank map
         if not filename or not os.path.exists(filename):
             self.board_size = (None, None)
             self.winner = None
@@ -128,11 +147,14 @@ class AntSimulation:
         winner = None
 
         try:
+            # Read file content
             with open(filename, "r") as file:
                 content = file.read()
 
+            # Split file content into sections using "============================"
             sections = content.split("=" * 30)
 
+            # Extract board size from the first section
             first_section = sections[0].strip()
             size_match = re.search(r"SIZE (\d+) (\d+)", first_section)
 
@@ -142,6 +164,7 @@ class AntSimulation:
             else:
                 raise ValueError("Board size not found.")
 
+            # Extract winner from the last section
             last_section = sections[len(sections) - 1].strip()
             winner_match = re.search(r"WINNER (\w+)", last_section)
 
@@ -150,18 +173,23 @@ class AntSimulation:
             else:
                 raise ValueError("Winner not found.")
 
+            # Process each round's data
             for section in sections[1:]:
                 stripped = section.strip()
                 lines = stripped.split("\n")
+
+                # Skip empty sections and those that are missing lines
                 if stripped == "" or not len(lines) == 4 + board_size[0]:
                     continue
 
+                # Extract round number
                 round_match = re.search(r"ROUND (\d+)", lines[0])
                 if round_match:
                     round_number = int(round_match.group(1))
                 else:
                     raise ValueError(f"Round number not found in section: {section}")
 
+                # Extract team scores
                 north_match = re.search(r"NORTH (\d+)", lines[1])
                 south_match = re.search(r"SOUTH (\d+)", lines[2])
 
@@ -172,8 +200,11 @@ class AntSimulation:
                     raise ValueError(f"Team points not found in section: {section}")
 
                 try:
+                    # Locate board data within the section
                     board_start_idx = lines.index("=" * 25) + 1
                     board = lines[board_start_idx : board_start_idx + board_size[0]]
+
+                    # Validate board dimensions and characters
                     for line in board:
                         if len(line) != board_size[1] or not set(line).issubset(
                             VALID_MAP_CHARS
@@ -186,15 +217,18 @@ class AntSimulation:
                         f"Valid board data not found in section: {section}"
                     )
 
+                # Store the parsed round data
                 round_obj = Round(round_number, north_points, south_points, board)
                 rounds.append(round_obj)
 
+            # Ensure exactly 200 rounds exist
             if not len(rounds) == 200:
                 raise ValueError(
                     f"File contains incomplete game data ({len(rounds)} rounds, {200 - len(rounds)} missing)"
                 )
 
-            print(f"Successfully loaded map from {filename}")
+            print(f"Successfully loaded map from {Fore.GREEN}{filename}{Fore.RESET}")
+            # Update simulation state with loaded data
             self.board_size = board_size
             self.winner = winner
             self.maps = rounds
@@ -202,7 +236,8 @@ class AntSimulation:
             self.map_component.map_data = self.maps[self.current_map_index].board
             self.reset_screen()
         except ValueError as e:
-            print(f"Error loading maps: {e}")
+            # Handle errors by resetting to a blank map
+            print(f"{Fore.LIGHTRED_EX}Error loading maps: {e}{Fore.RESET}")
             self.current_map_index = 0
             self.board_size = (None, None)
             self.winner = None
@@ -212,8 +247,9 @@ class AntSimulation:
 
     def skip_start(self) -> None:
         """
-        Reset the simulation to the first step in the loaded maps.
-        Pause simulation if configured to pause on step changes.
+        Reset the simulation to the first step.
+
+        If the simulation is configured to pause on step changes, it will pause.
         """
         if self.maps is None or len(self.maps) == 0:
             return
@@ -227,8 +263,9 @@ class AntSimulation:
     def step_backward(self) -> None:
         """
         Move the simulation one step backward.
-        Wrap around to the last step if at the beginning.
-        Pause simulation if configured to pause on step changes.
+
+        Wraps around to the last step if already at the beginning.
+        Pauses the simulation if configured to do so on step changes.
         """
         if self.maps is None or len(self.maps) == 0:
             return
@@ -254,8 +291,9 @@ class AntSimulation:
     def step_forward(self) -> None:
         """
         Move the simulation one step forward.
-        Wrap around to the first step if at the end.
-        Pause simulation if configured to pause on step changes.
+
+        Wraps around to the first step if already at the end.
+        Pauses the simulation if configured to do so on step changes.
         """
         if self.maps is None or len(self.maps) == 0:
             return
@@ -269,7 +307,8 @@ class AntSimulation:
     def skip_end(self) -> None:
         """
         Jump to the last step in the simulation.
-        Pause simulation if configured to pause on step changes.
+
+        If the simulation is set to pause on step changes, it will pause.
         """
         if self.maps is None or len(self.maps) == 0:
             return
@@ -319,8 +358,12 @@ class AntSimulation:
     def exit(self) -> None:
         """
         Save settings, clean up resources, and exit the simulation.
+
+        Ensures proper shutdown of the program, including saving settings
+        and quitting Pygame.
         """
-        if isinstance(sys.exc_info()[1], KeyboardInterrupt): print()
+        if isinstance(sys.exc_info()[1], KeyboardInterrupt):
+            print()
         print("Quitting AntCode")
         self.settings.save()
         pygame.quit()
@@ -328,18 +371,32 @@ class AntSimulation:
 
     def run(self) -> None:
         """
-        Run the simulation loop, handling events, commands, and rendering components.
+        Run the main simulation loop.
+
+        Handles user inputs, processes commands, updates the screen,
+        and manages the simulation's progression.
         """
         try:
             print("--------------------------------------------------------")
-            print("AntCode - A team resource collection game for CS courses")
+            print(Fore.CYAN)
+            print(f"                 _    {Fore.GREEN}_____          _      {Fore.CYAN}")
+            print(f"     /\\         | |  {Fore.GREEN}/ ____|        | |     {Fore.CYAN}")
+            print(f"    /  \\   _ __ | |_{Fore.GREEN}| |     ___   __| | ___ {Fore.CYAN}")
+            print(f"   / /\\ \\ | '_ \\| __| {Fore.GREEN}|    / _ \\ / _` |/ _ \\{Fore.CYAN}")
+            print(f"  / ____ \\| | | | |_{Fore.GREEN}| |___| (_) | (_| |  __/{Fore.CYAN}")
+            print(f" /_/    \\_\\_| |_|\\__|{Fore.GREEN}\\_____|___/ \\__,_|\\___|{Fore.CYAN}")
+            print(f"                                            ")
+            print(f"{Fore.RESET}                                            ")
+
+            print(f"{Style.BRIGHT}AntCode - {Style.NORMAL}A team resource collection game for CS courses")
             print(
-                "Thanks to:\n    @Grace-H for the simulation code\n    @a1silver for the UI implementation"
+                f"Thanks to:\n    {Fore.CYAN}@Grace-H{Fore.RESET} for the simulation code\n    {Fore.CYAN}@a1silver{Fore.RESET} for the UI implementation"
             )
-            print('Type "help" to see the full list of commands available')
-            
+            print(f'Type {Style.DIM}"help"{Style.NORMAL} to see the full list of commands available')
             if self.settings["fancyGraphics"]:
-                print("\nWARNING: Fancy graphics is enabled. Type 'config fancyGraphics false' to disable if you encounter lag.")
+                print(
+                    "\nWARNING: Fancy graphics is enabled. Type 'config fancyGraphics false' to disable if you encounter lag."
+                )
 
             self.running = threading.Event()
 
@@ -367,60 +424,64 @@ class AntSimulation:
                     if command == "load":
                         self.load_maps()
                     elif command == "generate":
+                        print(Style.NORMAL)
                         os.system(f"{sys.executable} ./antcode/main.py")
                     elif command == "config":
                         try:
                             self.settings[message.data[0]] = message.data[1]
-                            print(f"Updated '{message.data[0]}' to '{message.data[1]}'")
+                            print(f"Updated {Style.DIM}'{message.data[0]}'{Style.NORMAL} to {Fore.GREEN}'{message.data[1]}'{Fore.RESET}")
 
-                            if message.data[0] == "cellSize" or message.data[0] == "showTopBar":
+                            if (
+                                message.data[0] == "cellSize"
+                                or message.data[0] == "showTopBar"
+                            ):
                                 self.reset_screen()
                             elif message.data[0] == "stepsPerSecond":
                                 self.map_switch_interval = (
                                     1000 // self.settings["stepsPerSecond"]
                                 )
                         except TypeError as e:
-                            print(e)
+                            print(f"{Fore.LIGHTRED_EX}{e}{Fore.RESET}")
                     else:
                         if self.maps is None:
-                            print("No map is currently loaded")
+                            print(f"{Fore.LIGHTRED_EX}No map is currently loaded{Fore.RESET}")
                         else:
                             if command == "toggle":
                                 self.settings.simulationPaused = (
                                     not self.settings.simulationPaused
                                 )
                                 print(
-                                    f"Simulation {'un' if not self.settings.simulationPaused else ''}paused"
+                                    f"Simulation {f'{Fore.GREEN}un' if not self.settings.simulationPaused else Fore.YELLOW}paused{Fore.RESET}"
                                 )
                             elif command == "pause":
                                 self.settings.simulationPaused = True
-                                print(f"Simulation paused")
+                                print(f"Simulation {Fore.YELLOW}paused{Fore.RESET}")
                             elif command == "play":
                                 self.settings.simulationPaused = False
-                                print(f"Simulation unpaused")
+                                print(f"Simulation {Fore.GREEN}unpaused{Fore.RESET}")
                             elif command == "skip-start":
                                 self.skip_start()
                                 print(
-                                    f"Step: {self.current_map_index + 1} / {len(self.maps)}"
+                                    f"Step: {Fore.YELLOW if self.current_map_index + 1 == len(self.maps) else Fore.GREEN}{self.current_map_index + 1}{Fore.RESET} / {Fore.YELLOW}{len(self.maps)}{Fore.RESET}"
                                 )
                             elif command == "step-back":
                                 self.step_backward()
                                 print(
-                                    f"Step: {self.current_map_index + 1} / {len(self.maps)}"
+                                    f"Step: {Fore.YELLOW if self.current_map_index + 1 == len(self.maps) else Fore.GREEN}{self.current_map_index + 1}{Fore.RESET} / {Fore.YELLOW}{len(self.maps)}{Fore.RESET}"
                                 )
                             elif command == "step-forward":
                                 self.step_forward()
                                 print(
-                                    f"Step: {self.current_map_index + 1} / {len(self.maps)}"
+                                    f"Step: {Fore.YELLOW if self.current_map_index + 1 == len(self.maps) else Fore.GREEN}{self.current_map_index + 1}{Fore.RESET} / {Fore.YELLOW}{len(self.maps)}{Fore.RESET}"
                                 )
                             elif command == "skip-end":
                                 self.skip_end()
                                 print(
-                                    f"Step: {self.current_map_index + 1} / {len(self.maps)}"
+                                    f"Step: {Fore.YELLOW if self.current_map_index + 1 == len(self.maps) else Fore.GREEN}{self.current_map_index + 1}{Fore.RESET} / {Fore.YELLOW}{len(self.maps)}{Fore.RESET}"
                                 )
                             elif command == "steps":
                                 print(
-                                    f"Step: {self.current_map_index + 1} / {len(self.maps)}"
+                                    f"Step: {Fore.YELLOW if self.current_map_index + 1 == len(self.maps) else Fore.GREEN}{self.current_map_index + 1}{Fore.RESET} / {Fore.YELLOW}{len(self.maps)}{Fore.RESET}"
                                 )
                             elif command == "score":
                                 print(
@@ -436,12 +497,17 @@ class AntSimulation:
 
                 if (
                     self.maps is not None
-                    and current_time - self.last_map_switch_time >= self.map_switch_interval
+                    and current_time - self.last_map_switch_time
+                    >= self.map_switch_interval
                     and not self.settings.simulationPaused
                 ):
                     self.last_map_switch_time = current_time
-                    self.current_map_index = (self.current_map_index + 1) % len(self.maps)
-                    self.map_component.map_data = self.maps[self.current_map_index].board
+                    self.current_map_index = (self.current_map_index + 1) % len(
+                        self.maps
+                    )
+                    self.map_component.map_data = self.maps[
+                        self.current_map_index
+                    ].board
 
                     if (
                         self.current_map_index == len(self.maps) - 1
@@ -459,6 +525,7 @@ class AntSimulation:
 
             self.exit()
         except KeyboardInterrupt:
+            print(Style.NORMAL, end="")
             self.exit()
 
     def __init__(self):
@@ -574,15 +641,6 @@ class AntSimulation:
                 ["gen"],
             )
         )
-        """self.command_manager.register_command(
-            Command(
-                "config",
-                "Modify simulation settings",
-                "Start an interactive text prompt to view, query, or modify the simulation's configuration options.",
-                lambda args: self.update_config(),
-                ["conf", "settings", "set"],
-            )
-        )"""
         self.command_manager.register_command(
             Command(
                 "quit",
@@ -624,7 +682,6 @@ class AntSimulation:
         self.map_switch_interval = 1000 // self.settings["stepsPerSecond"]
         self.last_map_switch_time = pygame.time.get_ticks()
 
-
     def get_console_input(self) -> None:
         """
         Run the main console input loop for handling user commands.
@@ -638,12 +695,16 @@ class AntSimulation:
         while not self.running.is_set():
             try:
                 print("--------------------------------------------------------")
-                commandList = input("> ").lower().split(" ")
+                commandList = input(f"> {Style.DIM}").lower().split(" ")
+                print(Style.NORMAL, end="")
                 command = commandList[0:1][0]
                 args = commandList[1:]
 
                 try:
-                    if self.command_manager.execute_command(command, args) is False or command == "help":
+                    if (
+                        self.command_manager.execute_command(command, args) is False
+                        or command == "help"
+                    ):
                         continue
                 except KeyError as e:
                     message = str(e)

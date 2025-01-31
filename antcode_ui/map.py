@@ -9,7 +9,7 @@ from typing import Union
 from . import WHITE, COLORS, BLANK_MAP
 from .base import Component
 
-   
+
 class MapComponent(Component):
     """
     A component that displays a map on the screen with visual representations for different map elements.
@@ -31,13 +31,7 @@ class MapComponent(Component):
     """
 
     def __init__(
-        self,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        map_data: list[str],
-        simulation
+        self, x: int, y: int, width: int, height: int, map_data: list[str], simulation
     ):
         super().__init__(x, y, width, height)
         self.map_data = map_data
@@ -45,14 +39,54 @@ class MapComponent(Component):
         self.font24 = pygame.font.SysFont(None, 24)
         self.font32 = pygame.font.SysFont(None, 32)
         self.simulation = simulation
-        
+
     def is_ant_alive(self, ant: str) -> bool:
+        """
+        Checks if a given ant is present on the map.
+
+        Args:
+            ant (str): The identifier of the ant (e.g., 'A', 'B', 'C', etc.).
+
+        Returns:
+            bool: True if the given ant is present on the map.
+        """
         return any(ant.lower() in item.lower() for item in self.map_data)
-    
+
     def is_ant_holding_food(self, ant: str) -> bool:
-        return self.is_ant_alive(ant) and any(ant.lower() in item for item in self.map_data)
-        
-    def draw_string(self, text: str, x: int, y: int, center: bool, font: pygame.font.Font, screen: Union[pygame.Surface, pygame.SurfaceType]):
+        """
+        Checks if a given ant is alive and holding food.
+
+        Args:
+            ant (str): The identifier of the ant (e.g., 'A', 'B', 'C', etc.).
+
+        Returns:
+            bool: True if the given ant is alive and holding food.
+        """
+
+        return self.is_ant_alive(ant) and any(
+            ant.lower() in item for item in self.map_data
+        )
+
+    def draw_string(
+        self,
+        text: str,
+        x: int,
+        y: int,
+        center: bool,
+        font: pygame.font.Font,
+        screen: Union[pygame.Surface, pygame.SurfaceType],
+    ):
+        """
+        Draws a string on the screen at the given position.
+
+        Args:
+            text (str): The text to draw.
+            x (int): X-coordinate of the text position.
+            y (int): Y-coordinate of the text position.
+            center (bool): If True, centers the text at (x, y).
+            font (pygame.font.Font): The font to use.
+            screen (pygame.Surface): The pygame surface to draw on.
+        """
         text_surface = font.render(text, True, WHITE)
         text_rect = None
         if center:
@@ -60,8 +94,16 @@ class MapComponent(Component):
         else:
             text_rect = (x, y)
         screen.blit(text_surface, text_rect)
-        
-    def render_top_bar_north_team(self, screen: Union[pygame.Surface, pygame.SurfaceType]):
+
+    def render_top_bar_north_team(
+        self, screen: Union[pygame.Surface, pygame.SurfaceType]
+    ):
+        """
+        Draws the top bar for the north team, showing their score and ants.
+
+        Args:
+            screen (pygame.Surface): The pygame surface to draw on.
+        """
         northAnthillRect = pygame.Rect(
             self.x, self.y, self.width // 2, self.simulation.settings["cellSize"]
         )
@@ -74,13 +116,23 @@ class MapComponent(Component):
             image = pygame.image.load(image_path)
             image = pygame.transform.scale(
                 image,
-                (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
+                (
+                    self.simulation.settings["cellSize"],
+                    self.simulation.settings["cellSize"],
+                ),
             )
             screen.blit(image, (self.x, self.y))
         northScore = f"Score: {self.simulation.maps[self.simulation.current_map_index].north_points}"
         northScoreWidth, northScoreHeight = self.font24.size(northScore)
-        self.draw_string(northScore, self.x + self.simulation.settings["cellSize"] + 7, self.y + self.simulation.settings["cellSize"] // 2 - northScoreHeight // 2, False, self.font24, screen)
-        for ant, idx in zip(['A', 'B', 'C', 'D'], range(0, 4)):
+        self.draw_string(
+            northScore,
+            self.x + self.simulation.settings["cellSize"] + 7,
+            self.y + self.simulation.settings["cellSize"] // 2 - northScoreHeight // 2,
+            False,
+            self.font24,
+            screen,
+        )
+        for ant, idx in zip(["A", "B", "C", "D"], range(0, 4)):
             if self.is_ant_alive(ant):
                 image_path = os.path.join(
                     "./antcode_ui/images",
@@ -90,18 +142,51 @@ class MapComponent(Component):
                     image = pygame.image.load(image_path)
                     image = pygame.transform.scale(
                         image,
-                        (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
+                        (
+                            self.simulation.settings["cellSize"],
+                            self.simulation.settings["cellSize"],
+                        ),
                     )
-                    screen.blit(image, (self.x + (idx + 1) * self.simulation.settings["cellSize"] + 15 + northScoreWidth, self.y - 2))
-                    self.draw_string(ant, self.x + (idx + 2) * self.simulation.settings["cellSize"] + 5 + northScoreWidth, self.y + self.simulation.settings["cellSize"] - 12, True, self.font24, screen)
-                    
-    def render_top_bar_south_team(self, screen: Union[pygame.Surface, pygame.SurfaceType]):
+                    screen.blit(
+                        image,
+                        (
+                            self.x
+                            + (idx + 1) * self.simulation.settings["cellSize"]
+                            + 15
+                            + northScoreWidth,
+                            self.y - 2,
+                        ),
+                    )
+                    self.draw_string(
+                        ant,
+                        self.x
+                        + (idx + 2) * self.simulation.settings["cellSize"]
+                        + 5
+                        + northScoreWidth,
+                        self.y + self.simulation.settings["cellSize"] - 12,
+                        True,
+                        self.font24,
+                        screen,
+                    )
+
+    def render_top_bar_south_team(
+        self, screen: Union[pygame.Surface, pygame.SurfaceType]
+    ):
+        """
+        Draws the top bar for the south team, showing their score and ants.
+
+        Args:
+            screen (pygame.Surface): The pygame surface to draw on.
+        """
         # Define top bar region for south team
         southAnthillRect = pygame.Rect(
-            self.x + self.width // 2, self.y, self.width // 2, self.simulation.settings["cellSize"]
+            self.x + self.width // 2,
+            self.y,
+            self.width // 2,
+            self.simulation.settings["cellSize"],
         )
         pygame.draw.rect(screen, (200, 200, 255), southAnthillRect)
-        
+
         # Load in south team icon
         image_path = os.path.join(
             "./antcode_ui/images",
@@ -111,15 +196,31 @@ class MapComponent(Component):
             image = pygame.image.load(image_path)
             image = pygame.transform.scale(
                 image,
-                (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
+                (
+                    self.simulation.settings["cellSize"],
+                    self.simulation.settings["cellSize"],
+                ),
             )
-            screen.blit(image, (self.x + self.width - self.simulation.settings["cellSize"], self.y))
-            
+            screen.blit(
+                image,
+                (self.x + self.width - self.simulation.settings["cellSize"], self.y),
+            )
+
         # Render score text
         southScore = f"Score: {self.simulation.maps[self.simulation.current_map_index].south_points}"
         southScoreWidth, southScoreHeight = self.font24.size(southScore)
-        self.draw_string(southScore, self.x + self.width - (self.simulation.settings["cellSize"] + 7) - southScoreWidth, self.y + self.simulation.settings["cellSize"] // 2 - southScoreHeight // 2, False, self.font24, screen)
-        for ant, idx in zip(reversed(['E', 'F', 'G', 'H']), range(0, 4)):
+        self.draw_string(
+            southScore,
+            self.x
+            + self.width
+            - (self.simulation.settings["cellSize"] + 7)
+            - southScoreWidth,
+            self.y + self.simulation.settings["cellSize"] // 2 - southScoreHeight // 2,
+            False,
+            self.font24,
+            screen,
+        )
+        for ant, idx in zip(reversed(["E", "F", "G", "H"]), range(0, 4)):
             if self.is_ant_alive(ant):
                 image_path = os.path.join(
                     "./antcode_ui/images",
@@ -129,10 +230,32 @@ class MapComponent(Component):
                     image = pygame.image.load(image_path)
                     image = pygame.transform.scale(
                         image,
-                        (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
+                        (
+                            self.simulation.settings["cellSize"],
+                            self.simulation.settings["cellSize"],
+                        ),
                     )
-                    screen.blit(image, (self.x + self.width - ((idx + 2) * self.simulation.settings["cellSize"] + 7) - southScoreWidth, self.y - 2))
-                    self.draw_string(ant, self.x + self.width - ((idx + 1) * self.simulation.settings["cellSize"] + 17) - southScoreWidth, self.y + self.simulation.settings["cellSize"] - 12, True, self.font24, screen)
+                    screen.blit(
+                        image,
+                        (
+                            self.x
+                            + self.width
+                            - ((idx + 2) * self.simulation.settings["cellSize"] + 7)
+                            - southScoreWidth,
+                            self.y - 2,
+                        ),
+                    )
+                    self.draw_string(
+                        ant,
+                        self.x
+                        + self.width
+                        - ((idx + 1) * self.simulation.settings["cellSize"] + 17)
+                        - southScoreWidth,
+                        self.y + self.simulation.settings["cellSize"] - 12,
+                        True,
+                        self.font24,
+                        screen,
+                    )
 
     def draw(self, screen: Union[pygame.Surface, pygame.SurfaceType]):
         """
@@ -141,7 +264,11 @@ class MapComponent(Component):
         Args:
             screen (Union[pygame.Surface, pygame.SurfaceType]): The pygame surface to which the map will be drawn.
         """
-        cell_offset = 1 if self.map_data is not BLANK_MAP and self.simulation.settings["showTopBar"] else 0
+        cell_offset = (
+            1
+            if self.map_data is not BLANK_MAP and self.simulation.settings["showTopBar"]
+            else 0
+        )
 
         # Render top bar
         if self.map_data is not BLANK_MAP and self.simulation.settings["showTopBar"]:
@@ -150,7 +277,14 @@ class MapComponent(Component):
                 self.render_top_bar_south_team(screen)
 
                 stepCounter = f"Step {self.simulation.current_map_index + 1} / {len(self.simulation.maps)}"
-                self.draw_string(stepCounter, self.x + self.width // 2, self.y + self.simulation.settings["cellSize"] // 2, True, self.font32, screen)
+                self.draw_string(
+                    stepCounter,
+                    self.x + self.width // 2,
+                    self.y + self.simulation.settings["cellSize"] // 2,
+                    True,
+                    self.font32,
+                    screen,
+                )
 
             except TypeError:
                 pass
@@ -164,7 +298,8 @@ class MapComponent(Component):
             for col_idx, char in enumerate(row):
                 cell_rect = pygame.Rect(
                     self.x + col_idx * self.simulation.settings["cellSize"],
-                    self.y + (row_idx + cell_offset) * self.simulation.settings["cellSize"],
+                    self.y
+                    + (row_idx + cell_offset) * self.simulation.settings["cellSize"],
                     self.simulation.settings["cellSize"],
                     self.simulation.settings["cellSize"],
                 )
@@ -179,24 +314,26 @@ class MapComponent(Component):
                     if row_idx % 4 == 0 and col_idx % 4 == 0:
                         grass_rect = pygame.Rect(
                             self.x + col_idx * self.simulation.settings["cellSize"],
-                            self.y + (row_idx + cell_offset) * self.simulation.settings["cellSize"],
+                            self.y
+                            + (row_idx + cell_offset)
+                            * self.simulation.settings["cellSize"],
                             self.simulation.settings["cellSize"] * 4,
                             self.simulation.settings["cellSize"] * 4,
                         )
-                        image_path = os.path.join(
-                            "./antcode_ui/images",
-                            "empty.png"
-                        )
+                        image_path = os.path.join("./antcode_ui/images", "empty.png")
                         if os.path.exists(image_path):
                             image = pygame.image.load(image_path)
                             image = pygame.transform.scale(
                                 image,
-                                (self.simulation.settings["cellSize"] * 4, self.simulation.settings["cellSize"] * 4),
+                                (
+                                    self.simulation.settings["cellSize"] * 4,
+                                    self.simulation.settings["cellSize"] * 4,
+                                ),
                             )
                             screen.blit(image, grass_rect.topleft)
-                            
+
                     # Walls
-                    if char == '#':
+                    if char == "#":
                         image_path = os.path.join(
                             "./antcode_ui/images",
                             "wall.png",
@@ -205,7 +342,10 @@ class MapComponent(Component):
                             image = pygame.image.load(image_path)
                             image = pygame.transform.scale(
                                 image,
-                                (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]),
+                                (
+                                    self.simulation.settings["cellSize"],
+                                    self.simulation.settings["cellSize"],
+                                ),
                             )
                             screen.blit(image, cell_rect.topleft)
                 else:
@@ -215,7 +355,13 @@ class MapComponent(Component):
                     image_path = os.path.join("./antcode_ui/images", "food.png")
                     if os.path.exists(image_path):
                         image = pygame.image.load(image_path).convert_alpha()
-                        image = pygame.transform.scale(image, (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]))
+                        image = pygame.transform.scale(
+                            image,
+                            (
+                                self.simulation.settings["cellSize"],
+                                self.simulation.settings["cellSize"],
+                            ),
+                        )
                         screen.blit(image, cell_rect.topleft)
                 elif char == "@" or char == "X":
                     image_path = os.path.join(
@@ -224,7 +370,13 @@ class MapComponent(Component):
                     )
                     if os.path.exists(image_path):
                         image = pygame.image.load(image_path)
-                        image = pygame.transform.scale(image, (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]))
+                        image = pygame.transform.scale(
+                            image,
+                            (
+                                self.simulation.settings["cellSize"],
+                                self.simulation.settings["cellSize"],
+                            ),
+                        )
                         screen.blit(image, cell_rect.topleft)
                 else:
                     if char.isalpha() and char.upper() in "ABCDEFGH":
@@ -234,33 +386,44 @@ class MapComponent(Component):
                         )
                         if os.path.exists(image_path):
                             image = pygame.image.load(image_path)
-                            image = pygame.transform.scale(image, (self.simulation.settings["cellSize"], self.simulation.settings["cellSize"]))
+                            image = pygame.transform.scale(
+                                image,
+                                (
+                                    self.simulation.settings["cellSize"],
+                                    self.simulation.settings["cellSize"],
+                                ),
+                            )
                             screen.blit(image, cell_rect.topleft)
 
-                if char != '#':
+                if char != "#":
                     pygame.draw.rect(screen, (100, 100, 100), cell_rect, 1)
 
         # Render hovered cell overlay and tooltip
         keys = pygame.key.get_pressed()
         if hovered_cell and pygame.mouse.get_focused():
             cell_rect, char, cell_x, cell_y = hovered_cell
-            
+
             if self.simulation.settings["hoverOverlay"]:
                 # Draw semi-transparent overlay
-                overlay = pygame.Surface((cell_rect.width, cell_rect.height), pygame.SRCALPHA)
+                overlay = pygame.Surface(
+                    (cell_rect.width, cell_rect.height), pygame.SRCALPHA
+                )
                 overlay.fill((255, 255, 255, 128))  # White with 50% opacity
                 screen.blit(overlay, cell_rect.topleft)
 
-            if (self.simulation.settings["tooltips"] == 1 and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT])) or self.simulation.settings["tooltips"] == 2:
+            if (
+                self.simulation.settings["tooltips"] == 1
+                and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT])
+            ) or self.simulation.settings["tooltips"] == 2:
                 # Tooltip position adjustment
                 tooltip_text = [f"Cell ({cell_x}, {cell_y})"]
-                if char == '#':
+                if char == "#":
                     tooltip_text.append("Wall")
                 elif char.isdigit():
                     tooltip_text.append(f"Food pile ({char})")
-                elif char == '@':
+                elif char == "@":
                     tooltip_text.append("North Ant Hill")
-                elif char == 'X':
+                elif char == "X":
                     tooltip_text.append("South Ant Hill")
                 elif char.isalpha() and char.upper() in "ABCDEFGH":
                     team = "North Team" if char.upper() in "ABCD" else "South Team"
@@ -271,10 +434,15 @@ class MapComponent(Component):
                 tooltip_font = pygame.font.Font(None, 24)
 
                 # Render each line of the tooltip
-                rendered_lines = [tooltip_font.render(line, True, (255, 255, 255)) for line in tooltip_text]
+                rendered_lines = [
+                    tooltip_font.render(line, True, (255, 255, 255))
+                    for line in tooltip_text
+                ]
                 line_heights = [line.get_height() for line in rendered_lines]
                 tooltip_width = max(line.get_width() for line in rendered_lines)
-                tooltip_height = sum(line_heights) + (len(line_heights) - 1) * 4  # Add spacing between lines
+                tooltip_height = (
+                    sum(line_heights) + (len(line_heights) - 1) * 4
+                )  # Add spacing between lines
 
                 tooltip_x = mouse_x + 25
                 tooltip_y = mouse_y + 25

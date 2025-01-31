@@ -43,7 +43,7 @@ Install project dependencies.
 pip install -r requirements.txt
 ```
 
-Initialize and update Git submodules.
+Initialize and update Git submodules. _(Necessary for [game generation](https://github.com/Grace-H/antcode?tab=readme-ov-file#running-the-simulation) with the `gen` command)_
 ```
 git submodule update --init
 ```

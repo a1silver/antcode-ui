@@ -4,6 +4,7 @@ from copy import deepcopy
 # Third-Party Imports
 import difflib
 from typing import Callable, Optional, Dict
+from colorama import Fore, Back, Style
 
 # Local Imports
 from .message import Message
@@ -190,16 +191,25 @@ class HelpCommand(Command):
         if command_str:
             if command_str in self.command_manager.commands:
                 command = self.command_manager.commands[command_str]
-                print(f"{command.command} - {command.short_description}\n{command.long_description}")
+                print(
+                    f"{Style.DIM}{command.command}{Style.NORMAL} - {command.short_description}\n\n{command.long_description}"
+                )
                 if command.aliases:
                     if command.long_description != "":
                         print()
-                    print(f"Aliases: {', '.join('<ENTER>' if alias == '' and command.command == 'toggle' else alias for alias in command.aliases)}")
+                    print(
+                        f"Aliases: {Fore.GREEN}{', '.join('<ENTER>' if alias == '' and command.command == 'toggle' else alias for alias in command.aliases)}{Fore.RESET}"
+                    )
             else:
                 print(f"Command '{command_str}' not found.")
         else:
-            print("Available commands:")
-            print("\n".join(f"{command.command}: {command.short_description}" for command in self.command_manager.commands.values() if not command.is_alias))
+            print("Available commands\n")
+            print(f"Type {Style.DIM}\"help [command]\"{Style.NORMAL} to view help for a specific command\n")
+            cmd_list = [command.command for command in self.command_manager.commands.values() if not command.is_alias]
+            cmd_list.sort()
+            for i, string in enumerate(cmd_list):
+                print(string.ljust(max(map(len, cmd_list), default=0) + 5), end="\n" if (i + 1) % 2 == 0 else "")
+            print()
 
     def execute(self, args: Optional[list[str]] = None) -> bool:
         """
@@ -214,7 +224,7 @@ class HelpCommand(Command):
         command_str = args[0] if args and len(args) > 0 else None
         self.help_command(command_str)
         return True
-    
+
 
 class ConfigCommand(Command):
     def __init__(self, command_manager: CommandManager) -> None:
@@ -222,10 +232,10 @@ class ConfigCommand(Command):
             command="config",
             short_description="Modify simulation settings",
             long_description="Start an interactive text prompt to view, query, or modify the simulation's configuration options.",
-            executor = self.execute
+            executor=self.execute,
         )
         self.command_manager = command_manager
-        
+
     def get_sorted_key_matches(self, key_name: str) -> list[tuple[str, float]]:
         """
         Retrieve a sorted list of setting keys ranked by similarity to the given key name.
@@ -276,7 +286,9 @@ class ConfigCommand(Command):
 
         return sorted_matches[0][0]
 
-    def update_config(self, config_key: Optional[str] = None, config_value: Optional[str] = None) -> bool:
+    def update_config(
+        self, config_key: Optional[str] = None, config_value: Optional[str] = None
+    ) -> bool:
         """
         Interactively update or query configuration settings.
 
@@ -296,21 +308,23 @@ class ConfigCommand(Command):
         """
         if config_key:
             matched_key = self.get_best_match_key(config_key)
-            
+
             if not matched_key:
                 return False
-            
+
             new_value = None
-            
+
             if config_value:
                 new_value = config_value
             else:
                 new_value = input(
-                    f"Enter a new {self.command_manager.simulation.settings.get_key_type(matched_key)} value for '{matched_key}' (leave blank to cancel): "
+                    f"Enter a new {self.command_manager.simulation.settings.get_key_type(matched_key)} value for '{matched_key}' (leave blank to cancel): {Style.DIM}"
                 )
+                print(Style.NORMAL, end="")
+                
             if new_value == "":
                 return False
-            
+
             try:
                 if "." in new_value:
                     new_value = float(new_value)
@@ -322,14 +336,19 @@ class ConfigCommand(Command):
                 elif new_value.lower() == "none":
                     new_value = None
 
-            self.command_manager.simulation.command_queue.put(Message("config", (matched_key, new_value)))
+            self.command_manager.simulation.command_queue.put(
+                Message("config", (matched_key, new_value))
+            )
             return True
-            
+
         option = -1
         while option < 1 or option > 3:
             try:
-                print("(1) Modify a setting\n(2) Query a setting value\n(3) View all settings")
-                tempInput = input("> ")
+                print(
+                    f"{Style.DIM}(1){Style.NORMAL} Modify a setting\n{Style.DIM}(2){Style.NORMAL} Query a setting\n{Style.DIM}(3){Style.NORMAL} View all settings"
+                )
+                tempInput = input(f"> {Style.DIM}")
+                print(Style.NORMAL, end="")
                 if tempInput == "":
                     option = 1
                     break
@@ -338,19 +357,21 @@ class ConfigCommand(Command):
                 print("Please enter a number 1 to 3.")
 
         if option == 1:
-            key_name = input("Enter a key name (leave blank to cancel): ").strip()
+            key_name = input(f"Enter a key name (leave blank to cancel): {Style.DIM}").strip()
+            print(Style.NORMAL, end="")
 
             if key_name == "":
                 return False
 
             matched_key = self.get_best_match_key(key_name)
-            
+
             if not matched_key:
                 return False
 
             new_value = input(
-                f"***\n{matched_key}: {self.command_manager.simulation.settings.get_key_description(matched_key)}\n***\nEnter a new {self.command_manager.simulation.settings.get_key_type(matched_key)} value for '{matched_key}' (leave blank to cancel): "
+                f"\n{Style.BRIGHT}>{Style.NORMAL} {Style.DIM}{matched_key}{Style.NORMAL}: {Fore.GREEN}{self.command_manager.simulation.settings[matched_key]}{Fore.RESET}\n  {self.command_manager.simulation.settings.get_key_description(matched_key)}\n\nEnter a new {Fore.CYAN}{self.command_manager.simulation.settings.get_key_type(matched_key)}{Fore.RESET} value for {Style.DIM}'{matched_key}'{Style.NORMAL} (leave blank to cancel): {Style.DIM}"
             )
+            print(Style.NORMAL, end="")
 
             if new_value == "":
                 return False
@@ -366,10 +387,13 @@ class ConfigCommand(Command):
                 elif new_value.lower() == "none":
                     new_value = None
 
-            self.command_manager.simulation.command_queue.put(Message("config", (matched_key, new_value)))
+            self.command_manager.simulation.command_queue.put(
+                Message("config", (matched_key, new_value))
+            )
             return True
         elif option == 2:
-            key_name = input("Enter a key name (leave blank to cancel): ").strip()
+            key_name = input(f"Enter a key name (leave blank to cancel): {Style.DIM}").strip()
+            print(Style.NORMAL, end="")
 
             if key_name == "":
                 return False
@@ -377,16 +401,18 @@ class ConfigCommand(Command):
             matched_key = self.get_best_match_key(key_name)
 
             print(
-                f"{matched_key}: {self.command_manager.simulation.settings[matched_key]}\n  {self.command_manager.simulation.settings.descriptions[matched_key]}"
+                f"{Style.BRIGHT}>{Style.NORMAL} {Style.DIM}{matched_key}{Style.NORMAL}: {Fore.GREEN}{self.command_manager.simulation.settings[matched_key]}{Fore.RESET}\n  {self.command_manager.simulation.settings.descriptions[matched_key]}"
             )
             return False
         elif option == 3:
             for key, value in self.command_manager.simulation.settings.data.items():
-                print(f"{key}: {value}\n  {self.command_manager.simulation.settings.descriptions[key]}")
+                print(
+                    f"{Style.BRIGHT}>{Style.NORMAL} {Style.DIM}{key}{Style.NORMAL}: {Fore.GREEN}{value}{Fore.RESET}\n  {self.command_manager.simulation.settings.descriptions[key]}"
+                )
             return False
         else:  # We shouldn't ever reach here
             return False
-        
+
     def execute(self, args: Optional[list[str]] = None) -> bool:
         """
         Executes the config command.
