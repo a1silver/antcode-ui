@@ -77,15 +77,20 @@ For more detailed information, run `help` in the simulation.
 
 
 ## Configuration
-| Option | Details |
-| ------- | ----------- |
-| pauseOnStep | (bool) Pause the simulation instantly if the user manually steps forward or backward |
+| Option         | Details |
+|---------------|---------|
+| pauseOnStep   | (bool) Pause the simulation instantly if the user manually steps forward or backward |
 | stepsPerSecond | (int) How many times the simulation's map will advance to the next step per second |
-| cellSize | (int) How many pixels tall and wide each map cell will be |
-| autoSave | (bool) Auto-save the simulation configuration when modifying options (RECOMMENDED TO BE ON) |
+| cellSize      | (int) How many pixels tall and wide each map cell will be |
+| autoSave      | (bool) Auto-save the simulation configuration when modifying options (RECOMMENDED TO BE ON) |
 | stopOnLastStep | (bool) Instantly pause the simulation when the last step is reached |
 | fancyGraphics | (bool) Whether plain colors or detailed graphics are used to render certain cells |
-| showTopBar | (bool) Show or hide the panel containing key game details such as step number and team scores |
+| showTopBar    | (bool) Show or hide the panel containing key game details such as step number and team scores |
+| hoverOverlay  | (bool) Show or hide the slightly transparent overlay for hovered cells |
+| tooltips      | (int) Control the display of cell tooltips.<br>0: Tooltips off<br>1: Tooltips visible by pressing SHIFT<br>2: Tooltips on |
+| foodpileInfo  | (int) Control the display of food pile cell info.<br>0: BG and labels disabled<br>1: BG enabled<br>2: Labels enabled<br>3: BG and labels enabled |
+| antInfo       | (int) Control the display of ant cell info.<br>0: BG and labels disabled<br>1: BG enabled<br>2: Labels enabled<br>3: BG and labels enabled |
+
 
 For more detailed information, run `config` in the simulation.
 

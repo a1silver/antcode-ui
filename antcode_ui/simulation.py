@@ -390,7 +390,7 @@ class AntSimulation:
 
             print(f"{Style.BRIGHT}AntCode - {Style.NORMAL}A team resource collection game for CS courses")
             print(
-                f"Thanks to:\n    {Fore.CYAN}@Grace-H{Fore.RESET} for the simulation code\n    {Fore.CYAN}@a1silver{Fore.RESET} for the UI implementation"
+                f"Thanks to:\n    {Fore.CYAN}\033]8;;https://github.com/Grace-H\033\\@Grace-H\033]8;;\033\\{Fore.RESET} for the simulation code\n    {Fore.CYAN}\033]8;;https://github.com/a1silver\033\\@a1silver\033]8;;\033\\{Fore.RESET} for the UI implementation"
             )
             print(f'Type {Style.DIM}"help"{Style.NORMAL} to see the full list of commands available')
             if self.settings["fancyGraphics"]:
@@ -411,6 +411,7 @@ class AntSimulation:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         self.running.set()
+                        print(Style.NORMAL, end="")
                         continue
 
                     self.handle_mouse_event(event)

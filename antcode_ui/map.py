@@ -3,10 +3,10 @@ import os
 
 # Third-Party Imports
 import pygame
-from typing import Union
+from typing import Union, Optional
 
 # Local Imports
-from . import WHITE, COLORS, BLANK_MAP
+from . import WHITE, BLACK, COLORS, BLANK_MAP
 from .base import Component
 
 
@@ -29,6 +29,12 @@ class MapComponent(Component):
                               characters that represent different types of map elements.
         font (pygame.font.Font): A pygame font object used for rendering text on the map.
     """
+    
+    NORTH_ANTS = ["A", "B", "C", "D"]
+    SOUTH_ANTS = ["E", "F", "G", "H"]
+    
+    NORTH_TEAM_COLOR = (255, 200, 200)
+    SOUTH_TEAM_COLOR = (200, 200, 255)
 
     def __init__(
         self, x: int, y: int, width: int, height: int, map_data: list[str], simulation
@@ -75,6 +81,7 @@ class MapComponent(Component):
         center: bool,
         font: pygame.font.Font,
         screen: Union[pygame.Surface, pygame.SurfaceType],
+        color: tuple[int, int, int, Optional[int]] = WHITE,
     ):
         """
         Draws a string on the screen at the given position.
@@ -87,7 +94,7 @@ class MapComponent(Component):
             font (pygame.font.Font): The font to use.
             screen (pygame.Surface): The pygame surface to draw on.
         """
-        text_surface = font.render(text, True, WHITE)
+        text_surface = font.render(text, True, color)
         text_rect = None
         if center:
             text_rect = text_surface.get_rect(center=(x, y))
@@ -107,7 +114,7 @@ class MapComponent(Component):
         northAnthillRect = pygame.Rect(
             self.x, self.y, self.width // 2, self.simulation.settings["cellSize"]
         )
-        pygame.draw.rect(screen, (255, 200, 200), northAnthillRect)
+        pygame.draw.rect(screen, MapComponent.NORTH_TEAM_COLOR, northAnthillRect)
         image_path = os.path.join(
             "./antcode_ui/images",
             "north.png",
@@ -130,44 +137,67 @@ class MapComponent(Component):
             self.y + self.simulation.settings["cellSize"] // 2 - northScoreHeight // 2,
             False,
             self.font24,
-            screen,
+            screen
         )
-        for ant, idx in zip(["A", "B", "C", "D"], range(0, 4)):
-            if self.is_ant_alive(ant):
-                image_path = os.path.join(
-                    "./antcode_ui/images",
-                    f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) else ''}.png",
+        for ant, idx in zip(MapComponent.NORTH_ANTS, range(0, 4)):
+            image_path = os.path.join(
+                "./antcode_ui/images",
+                f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) and self.is_ant_alive(ant) else ''}.png",
+            )
+            if os.path.exists(image_path):
+                image = pygame.image.load(image_path)
+                image = pygame.transform.scale(
+                    image,
+                    (
+                        self.simulation.settings["cellSize"],
+                        self.simulation.settings["cellSize"],
+                    ),
                 )
-                if os.path.exists(image_path):
-                    image = pygame.image.load(image_path)
-                    image = pygame.transform.scale(
-                        image,
-                        (
-                            self.simulation.settings["cellSize"],
-                            self.simulation.settings["cellSize"],
-                        ),
-                    )
-                    screen.blit(
-                        image,
-                        (
-                            self.x
-                            + (idx + 1) * self.simulation.settings["cellSize"]
-                            + 15
-                            + northScoreWidth,
-                            self.y - 2,
-                        ),
-                    )
-                    self.draw_string(
-                        ant,
+                screen.blit(
+                    image,
+                    (
                         self.x
-                        + (idx + 2) * self.simulation.settings["cellSize"]
-                        + 5
+                        + (idx + 1) * self.simulation.settings["cellSize"]
+                        + 15
                         + northScoreWidth,
-                        self.y + self.simulation.settings["cellSize"] - 12,
-                        True,
-                        self.font24,
-                        screen,
+                        self.y - 2,
+                    ),
+                )
+                if not self.is_ant_alive(ant):
+                    dead_ant = os.path.join(
+                        "./antcode_ui/images", "dead.png"
                     )
+                    if os.path.exists(dead_ant):
+                        overlay_image = pygame.image.load(dead_ant)
+                        overlay_image = pygame.transform.scale(
+                            overlay_image,
+                            (
+                                self.simulation.settings["cellSize"],
+                                self.simulation.settings["cellSize"],
+                            ),
+                        )
+                        screen.blit(
+                            overlay_image,
+                            (
+                                self.x
+                                + (idx + 1) * self.simulation.settings["cellSize"]
+                                + 15
+                                + northScoreWidth,
+                                self.y - 2,
+                            ),
+                        )
+                self.draw_string(
+                    ant,
+                    self.x
+                    + (idx + 2) * self.simulation.settings["cellSize"]
+                    + 5
+                    + northScoreWidth,
+                    self.y + self.simulation.settings["cellSize"] - 12,
+                    True,
+                    self.font24,
+                    screen,
+                    WHITE if self.is_ant_alive(ant) else BLACK
+                )
 
     def render_top_bar_south_team(
         self, screen: Union[pygame.Surface, pygame.SurfaceType]
@@ -185,7 +215,7 @@ class MapComponent(Component):
             self.width // 2,
             self.simulation.settings["cellSize"],
         )
-        pygame.draw.rect(screen, (200, 200, 255), southAnthillRect)
+        pygame.draw.rect(screen, MapComponent.SOUTH_TEAM_COLOR, southAnthillRect)
 
         # Load in south team icon
         image_path = os.path.join(
@@ -220,42 +250,65 @@ class MapComponent(Component):
             self.font24,
             screen,
         )
-        for ant, idx in zip(reversed(["E", "F", "G", "H"]), range(0, 4)):
-            if self.is_ant_alive(ant):
-                image_path = os.path.join(
-                    "./antcode_ui/images",
-                    f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) else ''}.png",
+        for ant, idx in zip(reversed(MapComponent.SOUTH_ANTS), range(0, 4)):
+            image_path = os.path.join(
+                "./antcode_ui/images",
+                f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) and self.is_ant_alive(ant) else ''}.png",
+            )
+            if os.path.exists(image_path):
+                image = pygame.image.load(image_path)
+                image = pygame.transform.scale(
+                    image,
+                    (
+                        self.simulation.settings["cellSize"],
+                        self.simulation.settings["cellSize"],
+                    ),
                 )
-                if os.path.exists(image_path):
-                    image = pygame.image.load(image_path)
-                    image = pygame.transform.scale(
-                        image,
-                        (
-                            self.simulation.settings["cellSize"],
-                            self.simulation.settings["cellSize"],
-                        ),
-                    )
-                    screen.blit(
-                        image,
-                        (
-                            self.x
-                            + self.width
-                            - ((idx + 2) * self.simulation.settings["cellSize"] + 7)
-                            - southScoreWidth,
-                            self.y - 2,
-                        ),
-                    )
-                    self.draw_string(
-                        ant,
+                screen.blit(
+                    image,
+                    (
                         self.x
                         + self.width
-                        - ((idx + 1) * self.simulation.settings["cellSize"] + 17)
+                        - ((idx + 2) * self.simulation.settings["cellSize"] + 7)
                         - southScoreWidth,
-                        self.y + self.simulation.settings["cellSize"] - 12,
-                        True,
-                        self.font24,
-                        screen,
+                        self.y - 2,
+                    ),
+                )
+                if not self.is_ant_alive(ant):
+                    dead_ant = os.path.join(
+                        "./antcode_ui/images", "dead.png",
                     )
+                    if os.path.exists(dead_ant):
+                        overlay_image = pygame.image.load(dead_ant)
+                        overlay_image = pygame.transform.scale(
+                            overlay_image,
+                            (
+                                self.simulation.settings["cellSize"],
+                                self.simulation.settings["cellSize"],
+                            ),
+                        )
+                        screen.blit(
+                            overlay_image,
+                            (
+                                self.x
+                                + self.width
+                                - ((idx + 2) * self.simulation.settings["cellSize"] + 7)
+                                - southScoreWidth,
+                                self.y - 2,
+                            ),
+                        )
+                self.draw_string(
+                    ant,
+                    self.x
+                    + self.width
+                    - ((idx + 1) * self.simulation.settings["cellSize"] + 17)
+                    - southScoreWidth,
+                    self.y + self.simulation.settings["cellSize"] - 12,
+                    True,
+                    self.font24,
+                    screen,
+                    WHITE if self.is_ant_alive(ant) else BLACK
+                )
 
     def draw(self, screen: Union[pygame.Surface, pygame.SurfaceType]):
         """
@@ -307,7 +360,7 @@ class MapComponent(Component):
                 # Check if the cell is hovered
                 if cell_rect.collidepoint(mouse_x, mouse_y):
                     hovered_cell = (cell_rect, char, row_idx, col_idx)
-
+                
                 # Fancy Graphics
                 if self.simulation.settings["fancyGraphics"]:
                     # Grass
@@ -352,6 +405,13 @@ class MapComponent(Component):
                     pygame.draw.rect(screen, COLORS.get(char, WHITE), cell_rect)
 
                 if char.isdigit():
+                    if self.simulation.settings["foodpileInfo"] == 1 or self.simulation.settings["foodpileInfo"] == 3:
+                        overlay = pygame.Surface(
+                            (cell_rect.width, cell_rect.height), pygame.SRCALPHA
+                        )
+                        overlay.fill((248, 232, 187, 191))
+                        screen.blit(overlay, cell_rect.topleft)
+                    
                     image_path = os.path.join("./antcode_ui/images", "food.png")
                     if os.path.exists(image_path):
                         image = pygame.image.load(image_path).convert_alpha()
@@ -363,6 +423,17 @@ class MapComponent(Component):
                             ),
                         )
                         screen.blit(image, cell_rect.topleft)
+                    
+                    if self.simulation.settings["foodpileInfo"] == 2 or self.simulation.settings["foodpileInfo"] == 3:
+                        self.draw_string(
+                            char,
+                            cell_rect.left + 5,
+                            cell_rect.top + 5,
+                            False,
+                            self.font24,
+                            screen,
+                            BLACK
+                        )
                 elif char == "@" or char == "X":
                     image_path = os.path.join(
                         "./antcode_ui/images",
@@ -380,6 +451,21 @@ class MapComponent(Component):
                         screen.blit(image, cell_rect.topleft)
                 else:
                     if char.isalpha() and char.upper() in "ABCDEFGH":
+                        # Draw slightly transparent square to denote team color
+                        if self.simulation.settings["antInfo"] == 1 or self.simulation.settings["antInfo"] == 3:
+                            if char.upper() in MapComponent.NORTH_ANTS:
+                                overlay = pygame.Surface(
+                                    (cell_rect.width, cell_rect.height), pygame.SRCALPHA
+                                )
+                                overlay.fill(MapComponent.NORTH_TEAM_COLOR + (191,))
+                                screen.blit(overlay, cell_rect.topleft)
+                            elif char.upper() in MapComponent.SOUTH_ANTS:
+                                overlay = pygame.Surface(
+                                    (cell_rect.width, cell_rect.height), pygame.SRCALPHA
+                                )
+                                overlay.fill(MapComponent.SOUTH_TEAM_COLOR + (191,))
+                                screen.blit(overlay, cell_rect.topleft)
+                        
                         image_path = os.path.join(
                             "./antcode_ui/images",
                             f"ant-{char.lower()}{'-food' if char.islower() else ''}.png",
@@ -394,6 +480,17 @@ class MapComponent(Component):
                                 ),
                             )
                             screen.blit(image, cell_rect.topleft)
+                        
+                        if self.simulation.settings["antInfo"] == 2 or self.simulation.settings["antInfo"] == 3:
+                            self.draw_string(
+                                char.upper(),
+                                cell_rect.left + 5,
+                                cell_rect.top + 5,
+                                False,
+                                self.font24,
+                                screen,
+                                BLACK
+                            )
 
                 if char != "#":
                     pygame.draw.rect(screen, (100, 100, 100), cell_rect, 1)

@@ -38,6 +38,8 @@ class AntSettings:
         "showTopBar": [True, "bool"],
         "hoverOverlay": [True, "bool"],
         "tooltips": [2, "int", (0, 2)],
+        "foodpileInfo": [3, "int", (0, 3)],
+        "antInfo": [3, "int", (0, 3)]
     }
     SETTINGS_DESCRIPTIONS = {
         "pauseOnStep": "Pause the simulation instantly if the user manually steps forward or backward.",
@@ -49,6 +51,8 @@ class AntSettings:
         "showTopBar": "Show or hide the panel containing key game details such as step number and team scores.",
         "hoverOverlay": "Show or hide the slightly transparent overlay for hovered cells.",
         "tooltips": "Control the display of cell tooltips.\n  0. Tooltips off\n  1. Tooltips visible by pressing SHIFT\n  2. Tooltips on",
+        "foodpileInfo": "Control the display of food pile cell info.\n  0. BG and labels disabled\n  1. BG enabled\n  2. Labels enabled\n  3. BG and labels enabled",
+        "antInfo": "Control the display of ant cell info.\n  0. BG and labels disabled\n  1. BG enabled\n  2. Labels enabled\n  3. BG and labels enabled",
     }
 
     def __init__(self, json_file: str) -> None:
