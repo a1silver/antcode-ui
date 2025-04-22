@@ -4,6 +4,12 @@ _See [Grace-H/antcode](https://github.com/Grace-H/antcode)_
 
 A graphical extension to the game Antcode that uses text-based console commands with Pygame.
 
+<p align="center">
+  <img src="antcode-demo.png" alt="AntCode Demo 1" width="49%">
+  <img src="antcode-demo-2.png" alt="AntCode Demo 2" width="49%">
+</p>
+
+
 With Antcode-UI, students can: 
 - visualize their [ant strategies](https://github.com/Grace-H/antcode?tab=readme-ov-file#creating-ants) in a simulated game environment
 - analyze how their ants interact with the map and the rest of the team

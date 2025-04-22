@@ -29,10 +29,10 @@ class MapComponent(Component):
                               characters that represent different types of map elements.
         font (pygame.font.Font): A pygame font object used for rendering text on the map.
     """
-    
+
     NORTH_ANTS = ["A", "B", "C", "D"]
     SOUTH_ANTS = ["E", "F", "G", "H"]
-    
+
     NORTH_TEAM_COLOR = (255, 200, 200)
     SOUTH_TEAM_COLOR = (200, 200, 255)
 
@@ -137,7 +137,7 @@ class MapComponent(Component):
             self.y + self.simulation.settings["cellSize"] // 2 - northScoreHeight // 2,
             False,
             self.font24,
-            screen
+            screen,
         )
         for ant, idx in zip(MapComponent.NORTH_ANTS, range(0, 4)):
             image_path = os.path.join(
@@ -164,9 +164,7 @@ class MapComponent(Component):
                     ),
                 )
                 if not self.is_ant_alive(ant):
-                    dead_ant = os.path.join(
-                        "./antcode_ui/images", "dead.png"
-                    )
+                    dead_ant = os.path.join("./antcode_ui/images", "dead.png")
                     if os.path.exists(dead_ant):
                         overlay_image = pygame.image.load(dead_ant)
                         overlay_image = pygame.transform.scale(
@@ -196,7 +194,7 @@ class MapComponent(Component):
                     True,
                     self.font24,
                     screen,
-                    WHITE if self.is_ant_alive(ant) else BLACK
+                    WHITE if self.is_ant_alive(ant) else BLACK,
                 )
 
     def render_top_bar_south_team(
@@ -276,7 +274,8 @@ class MapComponent(Component):
                 )
                 if not self.is_ant_alive(ant):
                     dead_ant = os.path.join(
-                        "./antcode_ui/images", "dead.png",
+                        "./antcode_ui/images",
+                        "dead.png",
                     )
                     if os.path.exists(dead_ant):
                         overlay_image = pygame.image.load(dead_ant)
@@ -307,7 +306,7 @@ class MapComponent(Component):
                     True,
                     self.font24,
                     screen,
-                    WHITE if self.is_ant_alive(ant) else BLACK
+                    WHITE if self.is_ant_alive(ant) else BLACK,
                 )
 
     def draw(self, screen: Union[pygame.Surface, pygame.SurfaceType]):
@@ -360,7 +359,7 @@ class MapComponent(Component):
                 # Check if the cell is hovered
                 if cell_rect.collidepoint(mouse_x, mouse_y):
                     hovered_cell = (cell_rect, char, row_idx, col_idx)
-                
+
                 # Fancy Graphics
                 if self.simulation.settings["fancyGraphics"]:
                     # Grass
@@ -405,13 +404,16 @@ class MapComponent(Component):
                     pygame.draw.rect(screen, COLORS.get(char, WHITE), cell_rect)
 
                 if char.isdigit():
-                    if self.simulation.settings["foodpileInfo"] == 1 or self.simulation.settings["foodpileInfo"] == 3:
+                    if (
+                        self.simulation.settings["foodpileInfo"] == 1
+                        or self.simulation.settings["foodpileInfo"] == 3
+                    ):
                         overlay = pygame.Surface(
                             (cell_rect.width, cell_rect.height), pygame.SRCALPHA
                         )
                         overlay.fill((248, 232, 187, 191))
                         screen.blit(overlay, cell_rect.topleft)
-                    
+
                     image_path = os.path.join("./antcode_ui/images", "food.png")
                     if os.path.exists(image_path):
                         image = pygame.image.load(image_path).convert_alpha()
@@ -423,8 +425,11 @@ class MapComponent(Component):
                             ),
                         )
                         screen.blit(image, cell_rect.topleft)
-                    
-                    if self.simulation.settings["foodpileInfo"] == 2 or self.simulation.settings["foodpileInfo"] == 3:
+
+                    if (
+                        self.simulation.settings["foodpileInfo"] == 2
+                        or self.simulation.settings["foodpileInfo"] == 3
+                    ):
                         self.draw_string(
                             char,
                             cell_rect.left + 5,
@@ -432,9 +437,23 @@ class MapComponent(Component):
                             False,
                             self.font24,
                             screen,
-                            BLACK
+                            BLACK,
                         )
                 elif char == "@" or char == "X":
+                    # Draw slightly transparent square to denote team color
+                    if self.simulation.settings["anthillInfo"] == 1:
+                        if char == "@":
+                            overlay = pygame.Surface(
+                                (cell_rect.width, cell_rect.height), pygame.SRCALPHA
+                            )
+                            overlay.fill(MapComponent.NORTH_TEAM_COLOR + (191,))
+                            screen.blit(overlay, cell_rect.topleft)
+                        elif char == "X":
+                            overlay = pygame.Surface(
+                                (cell_rect.width, cell_rect.height), pygame.SRCALPHA
+                            )
+                            overlay.fill(MapComponent.SOUTH_TEAM_COLOR + (191,))
+                            screen.blit(overlay, cell_rect.topleft)
                     image_path = os.path.join(
                         "./antcode_ui/images",
                         f"{'north' if char == '@' else 'south'}.png",
@@ -452,7 +471,10 @@ class MapComponent(Component):
                 else:
                     if char.isalpha() and char.upper() in "ABCDEFGH":
                         # Draw slightly transparent square to denote team color
-                        if self.simulation.settings["antInfo"] == 1 or self.simulation.settings["antInfo"] == 3:
+                        if (
+                            self.simulation.settings["antInfo"] == 1
+                            or self.simulation.settings["antInfo"] == 3
+                        ):
                             if char.upper() in MapComponent.NORTH_ANTS:
                                 overlay = pygame.Surface(
                                     (cell_rect.width, cell_rect.height), pygame.SRCALPHA
@@ -465,7 +487,7 @@ class MapComponent(Component):
                                 )
                                 overlay.fill(MapComponent.SOUTH_TEAM_COLOR + (191,))
                                 screen.blit(overlay, cell_rect.topleft)
-                        
+
                         image_path = os.path.join(
                             "./antcode_ui/images",
                             f"ant-{char.lower()}{'-food' if char.islower() else ''}.png",
@@ -480,8 +502,11 @@ class MapComponent(Component):
                                 ),
                             )
                             screen.blit(image, cell_rect.topleft)
-                        
-                        if self.simulation.settings["antInfo"] == 2 or self.simulation.settings["antInfo"] == 3:
+
+                        if (
+                            self.simulation.settings["antInfo"] == 2
+                            or self.simulation.settings["antInfo"] == 3
+                        ):
                             self.draw_string(
                                 char.upper(),
                                 cell_rect.left + 5,
@@ -489,7 +514,7 @@ class MapComponent(Component):
                                 False,
                                 self.font24,
                                 screen,
-                                BLACK
+                                BLACK,
                             )
 
                 if char != "#":
@@ -520,8 +545,14 @@ class MapComponent(Component):
                     tooltip_text.append(f"Food pile ({char})")
                 elif char == "@":
                     tooltip_text.append("North Ant Hill")
+                    tooltip_text.append(
+                        f"Score: {self.simulation.maps[self.simulation.current_map_index].north_points}"
+                    )
                 elif char == "X":
                     tooltip_text.append("South Ant Hill")
+                    tooltip_text.append(
+                        f"Score: {self.simulation.maps[self.simulation.current_map_index].south_points}"
+                    )
                 elif char.isalpha() and char.upper() in "ABCDEFGH":
                     team = "North Team" if char.upper() in "ABCD" else "South Team"
                     tooltip_text.append(f"Ant {char.upper()}, {team}")

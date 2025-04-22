@@ -204,11 +204,20 @@ class HelpCommand(Command):
                 print(f"Command '{command_str}' not found.")
         else:
             print("Available commands\n")
-            print(f"Type {Style.DIM}\"help [command]\"{Style.NORMAL} to view help for a specific command\n")
-            cmd_list = [command.command for command in self.command_manager.commands.values() if not command.is_alias]
+            print(
+                f'Type {Style.DIM}"help [command]"{Style.NORMAL} to view help for a specific command\n'
+            )
+            cmd_list = [
+                command.command
+                for command in self.command_manager.commands.values()
+                if not command.is_alias
+            ]
             cmd_list.sort()
             for i, string in enumerate(cmd_list):
-                print(string.ljust(max(map(len, cmd_list), default=0) + 5), end="\n" if (i + 1) % 2 == 0 else "")
+                print(
+                    string.ljust(max(map(len, cmd_list), default=0) + 5),
+                    end="\n" if (i + 1) % 2 == 0 else "",
+                )
             print()
 
     def execute(self, args: Optional[list[str]] = None) -> bool:
@@ -321,7 +330,7 @@ class ConfigCommand(Command):
                     f"Enter a new {self.command_manager.simulation.settings.get_key_type(matched_key)} value for '{matched_key}' (leave blank to cancel): {Style.DIM}"
                 )
                 print(Style.NORMAL, end="")
-                
+
             if new_value == "":
                 return False
 
@@ -357,7 +366,9 @@ class ConfigCommand(Command):
                 print("Please enter a number 1 to 3.")
 
         if option == 1:
-            key_name = input(f"Enter a key name (leave blank to cancel): {Style.DIM}").strip()
+            key_name = input(
+                f"Enter a key name (leave blank to cancel): {Style.DIM}"
+            ).strip()
             print(Style.NORMAL, end="")
 
             if key_name == "":
@@ -392,7 +403,9 @@ class ConfigCommand(Command):
             )
             return True
         elif option == 2:
-            key_name = input(f"Enter a key name (leave blank to cancel): {Style.DIM}").strip()
+            key_name = input(
+                f"Enter a key name (leave blank to cancel): {Style.DIM}"
+            ).strip()
             print(Style.NORMAL, end="")
 
             if key_name == "":

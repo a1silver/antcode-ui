@@ -379,20 +379,36 @@ class AntSimulation:
         try:
             print("--------------------------------------------------------")
             print(Fore.CYAN)
-            print(f"                 _    {Fore.GREEN}_____          _      {Fore.CYAN}")
-            print(f"     /\\         | |  {Fore.GREEN}/ ____|        | |     {Fore.CYAN}")
-            print(f"    /  \\   _ __ | |_{Fore.GREEN}| |     ___   __| | ___ {Fore.CYAN}")
-            print(f"   / /\\ \\ | '_ \\| __| {Fore.GREEN}|    / _ \\ / _` |/ _ \\{Fore.CYAN}")
-            print(f"  / ____ \\| | | | |_{Fore.GREEN}| |___| (_) | (_| |  __/{Fore.CYAN}")
-            print(f" /_/    \\_\\_| |_|\\__|{Fore.GREEN}\\_____|___/ \\__,_|\\___|{Fore.CYAN}")
+            print(
+                f"                 _    {Fore.GREEN}_____          _      {Fore.CYAN}"
+            )
+            print(
+                f"     /\\         | |  {Fore.GREEN}/ ____|        | |     {Fore.CYAN}"
+            )
+            print(
+                f"    /  \\   _ __ | |_{Fore.GREEN}| |     ___   __| | ___ {Fore.CYAN}"
+            )
+            print(
+                f"   / /\\ \\ | '_ \\| __| {Fore.GREEN}|    / _ \\ / _` |/ _ \\{Fore.CYAN}"
+            )
+            print(
+                f"  / ____ \\| | | | |_{Fore.GREEN}| |___| (_) | (_| |  __/{Fore.CYAN}"
+            )
+            print(
+                f" /_/    \\_\\_| |_|\\__|{Fore.GREEN}\\_____|___/ \\__,_|\\___|{Fore.CYAN}"
+            )
             print(f"                                            ")
             print(f"{Fore.RESET}                                            ")
 
-            print(f"{Style.BRIGHT}AntCode - {Style.NORMAL}A team resource collection game for CS courses")
+            print(
+                f"{Style.BRIGHT}AntCode - {Style.NORMAL}A team resource collection game for CS courses"
+            )
             print(
                 f"Thanks to:\n    {Fore.CYAN}\033]8;;https://github.com/Grace-H\033\\@Grace-H\033]8;;\033\\{Fore.RESET} for the simulation code\n    {Fore.CYAN}\033]8;;https://github.com/a1silver\033\\@a1silver\033]8;;\033\\{Fore.RESET} for the UI implementation"
             )
-            print(f'Type {Style.DIM}"help"{Style.NORMAL} to see the full list of commands available')
+            print(
+                f'Type {Style.DIM}"help"{Style.NORMAL} to see the full list of commands available'
+            )
             if self.settings["fancyGraphics"]:
                 print(
                     "\nWARNING: Fancy graphics is enabled. Type 'config fancyGraphics false' to disable if you encounter lag."
@@ -430,7 +446,9 @@ class AntSimulation:
                     elif command == "config":
                         try:
                             self.settings[message.data[0]] = message.data[1]
-                            print(f"Updated {Style.DIM}'{message.data[0]}'{Style.NORMAL} to {Fore.GREEN}'{message.data[1]}'{Fore.RESET}")
+                            print(
+                                f"Updated {Style.DIM}'{message.data[0]}'{Style.NORMAL} to {Fore.GREEN}'{message.data[1]}'{Fore.RESET}"
+                            )
 
                             if (
                                 message.data[0] == "cellSize"
@@ -445,7 +463,9 @@ class AntSimulation:
                             print(f"{Fore.LIGHTRED_EX}{e}{Fore.RESET}")
                     else:
                         if self.maps is None:
-                            print(f"{Fore.LIGHTRED_EX}No map is currently loaded{Fore.RESET}")
+                            print(
+                                f"{Fore.LIGHTRED_EX}No map is currently loaded{Fore.RESET}"
+                            )
                         else:
                             if command == "toggle":
                                 self.settings.simulationPaused = (
