@@ -34,7 +34,7 @@ COLORS = {
     # "9": (255, 220, 140),  # Pale orange for 9
 }
 
-VALID_MAP_CHARS = set("#.@XABCDEFGHabcdefgh123456789")
+VALID_MAP_CHARS = set("#.@XABCDEFGHIJabcdefghij123456789")
 
 BLANK_MAP = [
     "#####################",

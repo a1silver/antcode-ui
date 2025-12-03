@@ -105,6 +105,15 @@ class AntSimulation:
         ) * self.settings["cellSize"]
         self.map_component.width = screen_width
         self.map_component.height = screen_height
+        
+        print("RELOADING")
+        print(f"HAS FIVE ANTS: {self.has_five_ants}")
+        if self.has_five_ants:
+            MapComponent.NORTH_ANTS = ["A", "B", "C", "D", "E"]
+            MapComponent.SOUTH_ANTS = ["F", "G", "H", "I", "J"]
+        else:
+            MapComponent.NORTH_ANTS = ["A", "B", "C", "D"]
+            MapComponent.SOUTH_ANTS = ["E", "F", "G", "H"]
         self.screen = pygame.display.set_mode((screen_width, screen_height))
 
     def add_component(self, component: Component) -> None:
@@ -131,6 +140,8 @@ class AntSimulation:
         filename, _ = QFileDialog.getOpenFileName(
             None, "Open File", "", "All Files (*);;Text Files (*.txt)", options=options
         )
+
+        self.has_five_ants = False
 
         # If no file is selected or the file doesn't exist, reset to blank map
         if not filename or not os.path.exists(filename):
@@ -212,6 +223,9 @@ class AntSimulation:
                             raise ValueError(
                                 f"Invalid map format or invalid characters detected: {line}"
                             )
+                        if {'I', 'J'} <= set(line): # Board has five ants]
+                            self.has_five_ants = True
+
                 except ValueError:
                     raise ValueError(
                         f"Valid board data not found in section: {section}"
@@ -694,6 +708,7 @@ class AntSimulation:
         self.board_size: Optional[Tuple[int, int]] = None
         self.winner: Optional[str] = None
         self.maps: Optional[list[Round]] = None
+        self.has_five_ants = False
 
         self.map_component = MapComponent(
             0, 0, self.screen_width, self.screen_height, BLANK_MAP, self

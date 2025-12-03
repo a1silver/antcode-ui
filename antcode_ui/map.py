@@ -46,6 +46,10 @@ class MapComponent(Component):
         self.font32 = pygame.font.SysFont(None, 32)
         self.simulation = simulation
 
+        if self.simulation.has_five_ants:
+            MapComponent.NORTH_ANTS = ["A", "B", "C", "D", "E"]
+            MapComponent.SOUTH_ANTS = ["F", "G", "H", "I", "J"]
+
     def is_ant_alive(self, ant: str) -> bool:
         """
         Checks if a given ant is present on the map.
@@ -139,7 +143,7 @@ class MapComponent(Component):
             self.font24,
             screen,
         )
-        for ant, idx in zip(MapComponent.NORTH_ANTS, range(0, 4)):
+        for ant, idx in zip(MapComponent.NORTH_ANTS, range(0, (5 if self.simulation.has_five_ants else 4))):
             image_path = os.path.join(
                 "./antcode_ui/images",
                 f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) and self.is_ant_alive(ant) else ''}.png",
@@ -248,7 +252,7 @@ class MapComponent(Component):
             self.font24,
             screen,
         )
-        for ant, idx in zip(reversed(MapComponent.SOUTH_ANTS), range(0, 4)):
+        for ant, idx in zip(reversed(MapComponent.SOUTH_ANTS), range(0, (5 if self.simulation.has_five_ants else 4))):
             image_path = os.path.join(
                 "./antcode_ui/images",
                 f"ant-{ant.lower()}{'-food' if self.is_ant_holding_food(ant) and self.is_ant_alive(ant) else ''}.png",
@@ -469,7 +473,7 @@ class MapComponent(Component):
                         )
                         screen.blit(image, cell_rect.topleft)
                 else:
-                    if char.isalpha() and char.upper() in "ABCDEFGH":
+                    if char.isalpha() and char.upper() in "ABCDEFGHIJ":
                         # Draw slightly transparent square to denote team color
                         if (
                             self.simulation.settings["antInfo"] == 1
@@ -553,10 +557,10 @@ class MapComponent(Component):
                     tooltip_text.append(
                         f"Score: {self.simulation.maps[self.simulation.current_map_index].south_points}"
                     )
-                elif char.isalpha() and char.upper() in "ABCDEFGH":
-                    team = "North Team" if char.upper() in "ABCD" else "South Team"
+                elif char.isalpha() and char.upper() in "ABCDEFGHIJ":
+                    team = "North Team" if char.upper() in f"ABCD{'E' if self.simulation.has_five_ants else ''}" else "South Team"
                     tooltip_text.append(f"Ant {char.upper()}, {team}")
-                    if char in "abcdefgh":
+                    if char in "abcdefghij":
                         tooltip_text.append("Holding food")
 
                 tooltip_font = pygame.font.Font(None, 24)
