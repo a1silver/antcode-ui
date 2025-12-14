@@ -106,8 +106,6 @@ class AntSimulation:
         self.map_component.width = screen_width
         self.map_component.height = screen_height
         
-        print("RELOADING")
-        print(f"HAS FIVE ANTS: {self.has_five_ants}")
         if self.has_five_ants:
             MapComponent.NORTH_ANTS = ["A", "B", "C", "D", "E"]
             MapComponent.SOUTH_ANTS = ["F", "G", "H", "I", "J"]
